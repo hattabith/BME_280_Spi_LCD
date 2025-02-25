@@ -73,12 +73,12 @@ Gaming :
 
 */
 BME280I2C::Settings settings(
-  BME280::OSR_X1,
-  BME280::OSR_X1,
+  BME280::OSR_X16,
+  BME280::OSR_X2,
   BME280::OSR_X1,
   BME280::Mode_Normal,
   BME280::StandbyTime_50ms,
-  BME280::Filter_Off,
+  BME280::Filter_16,
   BME280::SpiEnable_False,
   BME280I2C::I2CAddr_0x76  // I2C address. I2C specific.
 );
@@ -154,12 +154,37 @@ void OutLCD() {
   lcd.print("Pressure: ");
   lcd.setCursor(10, 2);
   lcd.print(pres);
-    lcd.setCursor(16, 2);
+  lcd.setCursor(16, 2);
   lcd.print("Torr");
+
+  lcd.setCursor(0, 3);
+  lcd.print("AbsHum: ");
+  lcd.setCursor(10, 3);
+  lcd.print(RHtoAH(hum, temp));
+  lcd.setCursor(16, 3);
+  lcd.print("g/m3");
 }
 
 void OutSerial() {
   Serial.print(temp);
   Serial.print(",");
   Serial.println(hum);
+}
+
+float AHtoRH(float absoluteHumidity, float temperatureC){
+  float P_saturation = 6.112 * exp((17.62 * temperatureC) / (243.12 + temperatureC));  // August-Roshe
+
+  float AH_max = ((217.0 * P_saturation) / (temperatureC + 273.15));  // Maximal absolute humidity in g/m3
+
+  float RH = (absoluteHumidity / AH_max) * 100.0;  // Relative humidity in %
+
+  return RH;
+}
+
+float RHtoAH(float RelativeHumidity, float temperatureC){
+  float P_saturation = 6.112 * pow(M_E, ((17.62 * temperatureC) / (243.12 + temperatureC)));  // August-Roshe
+
+  float AH = ((217.0 * P_saturation * RelativeHumidity) / ((temperatureC + 273.15) * 100.0));  // Maximal absolute humidity in g/m3
+
+  return AH;
 }
